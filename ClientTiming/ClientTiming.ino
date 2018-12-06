@@ -51,23 +51,11 @@ void btnInterrupt(){
 }
 
 void handleInput(uint8_t * payload){
-  Serial.println(*payload);
-  switch(*payload){
-    case 76://O
-      digitalWrite(LED_PIN, HIGH);
-      ledState = HIGH;
-      millisForTiming = millis();
-      //Serial.println("LEDON");
-      break;
-      /*
-  case 79://L
-      digitalWrite(LED_PIN, LOW);
-      Serial.println("LEDOFF");
-      break;
-      */
-  default:
-      break;
-  }
+  char *ptr;
+  int potVal = strtol((char*)payload, &ptr, 16);
+  Serial.println((char*)payload);
+  analogWrite(D0, potVal >> 2);
+  
 }
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t lenght) {
@@ -88,7 +76,6 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t lenght) {
         case WStype_TEXT:
             //USE_SERIAL.printf("[WSc] get text: %s\n", payload);
             //webSocket.sendTXT("Conn_succesful");
-            //Serial.println((char)*payload);
             handleInput(payload);
 
       // send message to server
