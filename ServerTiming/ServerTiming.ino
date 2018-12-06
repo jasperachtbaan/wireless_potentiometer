@@ -12,9 +12,12 @@
 #include <WebSocketsServer.h>
 #include <Hash.h>
 #include <ESP8266mDNS.h>
+#include <Ticker.h>
 
 int millisStore = 0;
 bool ledOn = LOW;
+
+Ticker potentiometer;
 
 int clients = 0;
 const char *ssid = "ESPap";
@@ -90,10 +93,18 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
 
 }
 
+void sendPotval(){
+    char potVal[] = { 0, 0, 0, 0 };
+    itoa(analogRead(A0), potVal, 16);
+    webSocket.broadcastTXT(potVal);
+}
+
 void setup() {
     // USE_SERIAL.begin(921600);
+    potentiometer.attach(0.02, sendPotval);
+    
     USE_SERIAL.begin(115200);
-
+    
     //Serial.setDebugOutput(true);
     USE_SERIAL.setDebugOutput(true);
 
@@ -125,6 +136,8 @@ void setup() {
 
 void loop() {
     webSocket.loop();
+
+    
     //webSocket.sendTXT(num, "message here");
     /*
     if(millis() - millisStore > 1000){
