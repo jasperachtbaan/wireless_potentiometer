@@ -24,59 +24,59 @@
 
 // the setup function runs once when you press reset or power the board
 #define LED_OUT D4
-#define POT1P D7
-#define POT1M D6
-#define POT2P D5
-#define POT2M D2
+#define POT_SEL D2
 
 #define POT_IN A0
 
-#define SWM D1
-#define SW1P D7
-#define SW2P D6
-#define SW3P D5
+#define SW1 D7
+#define SW2 D6
+#define SW3 D5
 
 void readPotSw(uint16_t* vals){
   //First read pot 1
-  pinMode(SWM, INPUT);
-  pinMode(POT2M, INPUT);
-  pinMode(POT2P, INPUT);
-  pinMode(POT1M, OUTPUT);
-  pinMode(POT1P, OUTPUT);
-  digitalWrite(POT1M, LOW);
-  digitalWrite(POT1P, HIGH);
-  delayMicroseconds(10);
+  digitalWrite(POT_SEL, 0);
   vals[0] = analogRead(A0);
 
   //Read pot 2
-  pinMode(SWM, INPUT);
-  pinMode(POT2M, OUTPUT);
-  pinMode(POT2P, OUTPUT);
-  pinMode(POT1M, INPUT);
-  pinMode(POT1P, INPUT);
-  digitalWrite(POT2M, LOW);
-  digitalWrite(POT2P, HIGH);
-  delayMicroseconds(10);
+  digitalWrite(POT_SEL, 1);
   vals[1] = analogRead(A0);
+
+  //Read switches
+  
+  vals[2] = digitalRead(SW1);
+
+  vals[3] = digitalRead(SW2);
+
+  vals[4] = digitalRead(SW3);
 }
 
 
 void setup() {
   // initialize digital pin LED_BUILTIN as an output.
   pinMode(LED_OUT, OUTPUT);
+  pinMode(SW1, INPUT_PULLUP);
+  pinMode(SW2, INPUT_PULLUP);
+  pinMode(SW3, INPUT_PULLUP);
+  pinMode(POT_SEL, OUTPUT);
   Serial.begin(115200);
 }
 
 // the loop function runs over and over again forever
 void loop() {
-  uint16_t vals[2];
+  uint16_t vals[5];
   readPotSw(vals);
   Serial.print(vals[0]);
   Serial.print(",");
-  Serial.println(vals[1]);
+  Serial.print(vals[1]);
+  Serial.print(",");
+  Serial.print(vals[2]);
+  Serial.print(",");
+  Serial.print(vals[3]);
+  Serial.print(",");
+  Serial.println(vals[4]);
   
   digitalWrite(LED_OUT, HIGH);   // turn the LED on (HIGH is the voltage level)
-  delay(500);                       // wait for a second
-  digitalWrite(LED_OUT, LOW);    // turn the LED off by making the voltage LOW
-  delay(500);                       // wait for a second
+  delay(50);                       // wait for a second
+  digitalWrite(LED_OUT, HIGH);    // turn the LED off by making the voltage LOW
+  delay(50);                       // wait for a second
 }
