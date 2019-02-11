@@ -35,6 +35,33 @@ WebSocketsServer webSocket = WebSocketsServer(80);
 
 #define USE_SERIAL Serial
 
+#define LED_OUT D4
+#define POT_SEL D2
+
+#define POT_IN A0
+
+#define SW1 D7
+#define SW2 D6
+#define SW3 D5
+
+void readPotSw(uint16_t* vals){
+  //First read pot 1
+  digitalWrite(POT_SEL, 0);
+  vals[0] = analogRead(A0);
+
+  //Read pot 2
+  digitalWrite(POT_SEL, 1);
+  vals[1] = analogRead(A0);
+
+  //Read switches
+  
+  vals[2] = digitalRead(SW1);
+
+  vals[3] = digitalRead(SW2);
+
+  vals[4] = digitalRead(SW3);
+}
+
 void newLedHandler(){
   webSocket.sendTXT(random(clients), "L");
 }
@@ -100,6 +127,11 @@ void sendPotval(){
 }
 
 void setup() {
+    pinMode(LED_OUT, OUTPUT);
+    pinMode(SW1, INPUT_PULLUP);
+    pinMode(SW2, INPUT_PULLUP);
+    pinMode(SW3, INPUT_PULLUP);
+    pinMode(POT_SEL, OUTPUT);
     // USE_SERIAL.begin(921600);
     potentiometer.attach(0.02, sendPotval);
     
