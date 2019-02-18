@@ -11,6 +11,7 @@
 #include <WebSocketsClient.h>
 long millisForTiming = 0;
 #include <Hash.h>
+#include <Ticker.h>
 bool ledState = LOW;
 #define LED_PIN D0
 #define INTERRUPT_PIN D8
@@ -23,40 +24,25 @@ int status = WL_IDLE_STATUS;
 #define USE_SERIAL Serial
 long millisDebounce = 0;
 
-void btnInterrupt(){
-  if(millis() - millisDebounce > 100 && ledState){
-    digitalWrite(LED_PIN, LOW);
-    ledState = LOW;
-    uint32_t millisTime = millis() - millisForTiming;
-    if(millisTime < 0 || millisTime > 0xFFFFFF){
-      millisTime = 0xFFFFFF;
-    }
-    char dataToSend[5];
-    dataToSend[0] = 84; //T for timing
-    dataToSend[1] = millisTime & 0x7F;//Map first 8 (lsb) bits of the timing to first char
-    dataToSend[2] = (millisTime & 0x3F80) >> 7;
-    dataToSend[3] = (millisTime & 0x1FC000) >> 14;
-    dataToSend[4] = NULL;
-    Serial.println(millisTime);
-    //Serial.println(dataToSend);
-    int i;
-    for(i = 0; i < 5; i++){
-      dataToSendBuff[i] = dataToSend[i];
-    }
-    boolDataToSend = HIGH;
-    //webSocket.sendTXT(dataToSend);
+uint8_t dataReceived = 0;
+
+Ticker counterWDT;
+
+void handleInput(uint8_t* payload, size_t lenght){
+  //Data enters as: Main, sub, left btn, middle btn, right btn
+  analogWrite(D0, payload[0]);
+  if(lenght == 5){
+    dataReceived = 1;
   }
-  millisDebounce = millis();
-  
 }
 
-void handleInput(uint8_t * payload){
-  char *ptr;
-  int potVal = strtol((char*)payload, &ptr, 16);
-  Serial.println((char*)payload);
-  analogWrite(D0, potVal >> 2);
-  
+void WDTInterrupt(){
+  if(!dataReceived){
+    analogWrite(D0, 0);
+  }
+  dataReceived = 0;
 }
+
 
 void webSocketEvent(WStype_t type, uint8_t * payload, size_t lenght) {
 
@@ -76,14 +62,16 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t lenght) {
         case WStype_TEXT:
             //USE_SERIAL.printf("[WSc] get text: %s\n", payload);
             //webSocket.sendTXT("Conn_succesful");
-            handleInput(payload);
+            
 
       // send message to server
       // webSocket.sendTXT("message here");
             break;
         case WStype_BIN:
-            USE_SERIAL.printf("[WSc] get binary lenght: %u\n", lenght);
+            //Data enters as: Main, sub, left btn, middle btn, right btn
             hexdump(payload, lenght);
+            handleInput(payload, lenght);
+            
 
             // send data to server
             // webSocket.sendBIN(payload, lenght);
@@ -94,7 +82,6 @@ void webSocketEvent(WStype_t type, uint8_t * payload, size_t lenght) {
 
 void setup() {
     pinMode(INTERRUPT_PIN, INPUT);
-    attachInterrupt(INTERRUPT_PIN, btnInterrupt, RISING);
     pinMode(LED_PIN, OUTPUT);
     digitalWrite(LED_PIN, LOW);
     // USE_SERIAL.begin(921600);
@@ -116,7 +103,8 @@ void setup() {
 
     connectWifi();
     printWifiStatus();
-  
+
+    counterWDT.attach(1.1, WDTInterrupt);
     
       /*
     //WifiMulti.ApListClean();
